@@ -1,44 +1,40 @@
 # GotoDocumentation Sublime Plugin
 # Jun 2014
 
+import os
+import re
 import webbrowser
-import sublime, sublime_plugin
-import re, os
 import subprocess
+import sublime, sublime_plugin
 
 default_docs = {
-        "ahk": "http://www.ahkscript.org/docs/commands/%(query)s.htm",
-        "rails": "http://api.rubyonrails.org/?q=%(query)s",
-        "controller": "http://api.rubyonrails.org/?q=%(query)s",
-        "ruby": "http://ruby-doc.com/search.html?q=%(query)s",
-        "js": "https://developer.mozilla.org/en-US/search?q=%(query)s&topic=js",
-        "html": "https://developer.mozilla.org/en-US/search?q=%(query)s&topic=html",
-        "coffee": "https://developer.mozilla.org/en-US/search?q=%(query)s",
-        "php": "http://php.net/manual-lookup.php?pattern=%(query)s",
-        "clojure": "http://clojuredocs.org/search?x=0&y=0&q=%(query)s",
-        "go": "http://golang.org/search?q=%(query)s",
-        "c": "http://www.cplusplus.com/search.do?q=%(query)s",
-        "cpp": "http://www.cplusplus.com/search.do?q=%(query)s",
-        "smarty": "http://www.smarty.net/%(query)s",
-        "cmake": "http://cmake.org/cmake/help/v2.8.8/cmake.html#command:%(query)s",
-        "perl": "http://perldoc.perl.org/search.html?q=%(query)s",
-        "cs": "http://social.msdn.microsoft.com/Search/?query=%(query)s",
-        "lua": "http://pgl.yoyo.org/luai/i/%(query)s",
-        "pgsql": "http://www.postgresql.org/search/?u=%%2Fdocs%%2Fcurrent%%2F&q=%(query)s",
-        "erlang": "http://erldocs.com/R16B03/?search=%(query)s",
-        "haskell": "http://hayoo.fh-wedel.de/?query=%(query)s",
-        "scala": "http://scalex.org/?q=%(query)s",
-        "css": "http://devdocs.io/#q=%(scope)s+%(query)s",
-        "scss": "http://devdocs.io/#q=%(scope)s+%(query)s",
-        "less": "http://devdocs.io/#q=%(scope)s+%(query)s",
-        "google": "https://google.com/search?q=%(scope)s+%(query)s",
-        "python": {
-            "command": ["python", "-m", "pydoc", "%(query)s"],
-            "failTest": ".*no Python documentation found for.*",
-            "changeMatch": "(Related help topics)",
-            "changeWith": "-------\n\\1",
-            "url": "http://docs.python.org/3/search.html?q=%(query)s"
-        }
+        'c':       'https://www.cplusplus.com/search.do?q=%(query)s',
+        'c++':     'https://www.cplusplus.com/search.do?q=%(query)s',
+        'clojure': 'https://clojuredocs.org/search?q=%(query)s',
+        'cmake':   'https://cmake.org/cmake/help/latest/search.html?q=%(query)s',
+        'cs':      'https://learn.microsoft.com/en-us/search/?terms=%(query)s',
+        'css':     'https://developer.mozilla.org/en-US/search?q=%(scope)s+%(query)s',
+        'erlang':  'https://www.erldocs.com/?search=%(query)s',
+        'html':    'https://developer.mozilla.org/en-US/search?q=%(scope)s+%(query)s',
+        'js':      'https://developer.mozilla.org/en-US/search?q=%(scope)s+%(query)s',
+        'less':    'https://devdocs.io/#q=%(scope)s+%(query)s',
+        'lua':     'https://devdocs.io/#q=%(scope)s+%(query)s',
+        'perl':    'https://perldoc.perl.org/search.html?q=%(query)s',
+        'pgsql':   'https://www.postgresql.org/search/?q=%(query)s',
+        'php':     'https://www.php.net/manual-lookup.php?pattern=%(query)s',
+        'python': {
+            'command': ['python', '-m', 'pydoc', '%(query)s'],
+            'failTest': '.*no Python documentation found for.*',
+            'changeMatch': '(Related help topics)',
+            'changeWith': '-------\n\\1',
+            'url': 'https://docs.python.org/3/search.html?q=%(query)s'
+        },
+        'rails':   'https://api.rubyonrails.org/?q=%(query)s',
+        'ruby':    'https://api.rubyonrails.org/?q=%(query)s',
+        'sass':    'https://devdocs.io/#q=%(scope)s+%(query)s',
+        'scss':    'https://devdocs.io/#q=%(scope)s+%(query)s',
+        'smarty':  'https://www.smarty.net/search?q=%(query)s',
+        'google':  'https://www.google.com/search?q=%(scope)s+%(query)s',
 }
 
 def combineDicts(dictionary1, dictionary2):
@@ -63,11 +59,12 @@ class GotoDocumentationCommand(sublime_plugin.TextCommand):
 
             if location and not location.empty():
                 q = self.view.substr(location)
-                scope = self.view.scope_name(location.begin()).rpartition('.')[2].strip()
+                scope = self.view.scope_name(0).split()[0].rpartition('.')[2].strip()
 
                 self.open_doc(q, scope)
 
     def open_doc(self, query, scope):
+        print(scope)
 
         settings = sublime.load_settings("goto_documentation.sublime-settings")
 
@@ -86,8 +83,6 @@ class GotoDocumentationCommand(sublime_plugin.TextCommand):
         if not tscope in docs:
             self.show_status("No docs available for the current scope !")
             return
-
-
 
         # if we have the scope defined in settings
         # build the url and open it
@@ -137,7 +132,7 @@ class GotoDocumentationCommand(sublime_plugin.TextCommand):
 
             # we have an url so we build and open it
             fullUrl = doc%{'query': query, 'scope': scope}
-            webbrowser.open(fullUrl)
+            webbrowser.open_new_tab(fullUrl)
 
 
     # Open and write on the output panel
